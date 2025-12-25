@@ -1,0 +1,221 @@
+/* BlissBox Professional Color Scheme */
+:root {
+    --primary: #E6A4B4;     /* Blush Pink */
+    --secondary: #5A2D4E;   /* Plum */
+    --accent: #C9A24D;      /* Gold */
+    --bg-light: #FAF9F7;
+    --text-dark: #333;
+}
+
+/* Global Styles */
+body {
+    background-color: var(--bliss-light);
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header/Navbar */
+.navbar {
+    background: linear-gradient(135deg, var(--bliss-dark) 0%, var(--bliss-primary) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: white !important;
+    font-size: 1.8rem;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--bliss-secondary) !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--bliss-primary);
+    border-color: var(--bliss-primary);
+    color: white;
+    padding: 10px 24px;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: var(--bliss-dark);
+    border-color: var(--bliss-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(42, 59, 143, 0.3);
+}
+
+.btn-secondary {
+    background-color: var(--bliss-secondary);
+    border-color: var(--bliss-secondary);
+    color: var(--bliss-dark);
+    font-weight: 600;
+}
+
+.btn-outline-primary {
+    border-color: var(--bliss-primary);
+    color: var(--bliss-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--bliss-primary);
+    color: white;
+}
+
+/* Category Cards */
+.category-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s;
+    border: 1px solid var(--bliss-border);
+    height: 100%;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--bliss-primary);
+}
+
+.category-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--bliss-primary) 0%, var(--bliss-accent) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.category-title {
+    color: var(--bliss-dark);
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}
+
+.category-count {
+    background-color: var(--bliss-secondary);
+    color: var(--bliss-dark);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(rgba(26, 26, 46, 0.9), rgba(42, 59, 143, 0.8)), 
+                url('/images/hero-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 100px 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    opacity: 0.9;
+    margin-bottom: 40px;
+}
+
+/* Product Cards */
+.product-card {
+    border: 1px solid var(--bliss-border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.product-card:hover {
+    border-color: var(--bliss-primary);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.product-img {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.product-price {
+    color: var(--bliss-primary);
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.sale-price {
+    color: #dc3545;
+    font-weight: 700;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Badges */
+.badge-featured {
+    background-color: var(--bliss-secondary);
+    color: var(--bliss-dark);
+    font-weight: 600;
+}
+
+.badge-sale {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Footer */
+.footer {
+    background-color: var(--bliss-dark);
+    color: white;
+    padding: 60px 0 30px;
+}
+
+.footer-title {
+    color: var(--bliss-secondary);
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: var(--bliss-secondary);
+}
+
+.copyright {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 20px;
+    margin-top: 40px;
+    color: rgba(255, 255, 255, 0.6);
+}
