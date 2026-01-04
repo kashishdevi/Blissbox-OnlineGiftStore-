@@ -3,17 +3,23 @@
 @section('title', 'Order Details - BlissBox Admin')
 
 @section('content')
-<div class="container-fluid py-4">
-    @include('admin.partials.nav')
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 fw-bold">Order Details</h1>
-            <p class="text-muted mb-0">Order #{{ $order->order_number }}</p>
+<div class="admin-layout">
+    @include('admin.layouts.sidebar')
+    
+    <div class="admin-content">
+        <div class="content-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Order Details</h1>
+                    <p class="text-muted mb-0">Order #{{ $order->order_number }}</p>
+                </div>
+                <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Orders
+                </a>
+            </div>
         </div>
-        <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i> Back to Orders
-        </a>
-    </div>
+
+        <div class="content-body">
     
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -246,4 +252,42 @@
         </div>
     </div>
 </div>
+
+<style>
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+.admin-content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 2rem;
+    transition: margin-left 0.3s;
+}
+
+.content-header {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.content-body {
+    /* Content body styles */
+}
+
+.card {
+    border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+    .admin-content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+</style>
 @endsection

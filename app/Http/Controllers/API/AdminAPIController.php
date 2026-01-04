@@ -5,15 +5,20 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Order;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
-class ProductAPIController extends Controller
+class AdminAPIController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Get all products (admin view - includes inactive)
+     */
+    public function getAllProducts(Request $request)
     {
-        $query = Product::where('is_active', true);
+        $query = Product::query();
         
         // Filter by category
         if ($request->has('category')) {
@@ -34,7 +39,7 @@ class ProductAPIController extends Controller
         $perPage = $request->get('per_page', 15);
         $products = $query->latest()->paginate($perPage);
         
-        // Format products with image URLs
+        // Format products
         $products->getCollection()->transform(function($product) {
             return [
                 'id' => $product->id,
@@ -60,7 +65,10 @@ class ProductAPIController extends Controller
         ], 200);
     }
 
-    public function show($id)
+    /**
+     * Get single product (admin view)
+     */
+    public function getProduct($id)
     {
         $product = Product::findOrFail($id);
         
@@ -85,54 +93,22 @@ class ProductAPIController extends Controller
         ], 200);
     }
 
-    public function search(Request $request)
-    {
-        $request->validate([
-            'q' => 'required|string|min:2',
-        ]);
-        
-        $products = Product::where('is_active', true)
-            ->where(function($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->q . '%')
-                      ->orWhere('category', 'like', '%' . $request->q . '%')
-                      ->orWhere('description', 'like', '%' . $request->q . '%');
-            })
-            ->limit(10)
-            ->get()
-            ->map(function($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'description' => $product->description,
-                    'price' => (float)$product->price,
-                    'discount_price' => $product->discount_price ? (float)$product->discount_price : null,
-                    'category' => $product->category,
-                    'image' => $product->image_url ?? asset($product->image ?? ''),
-                    'stock_quantity' => (int)$product->stock_quantity,
-                    'in_stock' => (bool)$product->in_stock,
-                    'is_featured' => (bool)$product->is_featured,
-                ];
-            });
-        
-        return response()->json([
-            'success' => true,
-            'data' => $products,
-        ], 200);
-    }
-
-    public function store(Request $request)
+    /**
+     * Create product (admin)
+     */
+    public function createProduct(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
-            'category_id' => 'nullable|exists:categories,id',
-            'category' => 'nullable|string|max:100',
+            'category' => 'required|string|max:100',
             'stock_quantity' => 'required|integer|min:0',
             'features' => 'nullable|string',
-            'is_featured' => 'boolean',
-            'in_stock' => 'boolean',
+            'is_featured' => 'nullable|boolean',
+            'in_stock' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'image_url' => 'nullable|url|max:2048',
         ]);
@@ -158,12 +134,9 @@ class ProductAPIController extends Controller
         }
 
         // Process features
-        if ($request->has('features')) {
+        if ($request->has('features') && is_string($request->features)) {
             $data['features'] = array_map('trim', explode(',', $request->features));
         }
-
-        // Generate slug
-        $data['slug'] = Str::slug($request->name);
 
         $product = Product::create($data);
 
@@ -186,7 +159,10 @@ class ProductAPIController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update product (admin)
+     */
+    public function updateProduct(Request $request, $id)
     {
         $product = Product::findOrFail($id);
 
@@ -195,12 +171,12 @@ class ProductAPIController extends Controller
             'description' => 'sometimes|required|string',
             'price' => 'sometimes|required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
-            'category_id' => 'nullable|exists:categories,id',
-            'category' => 'nullable|string|max:100',
+            'category' => 'sometimes|required|string|max:100',
             'stock_quantity' => 'sometimes|required|integer|min:0',
             'features' => 'nullable|string',
-            'is_featured' => 'boolean',
-            'in_stock' => 'boolean',
+            'is_featured' => 'nullable|boolean',
+            'in_stock' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'image_url' => 'nullable|url|max:2048',
         ]);
@@ -235,13 +211,8 @@ class ProductAPIController extends Controller
         }
 
         // Process features
-        if ($request->has('features')) {
+        if ($request->has('features') && is_string($request->features)) {
             $data['features'] = array_map('trim', explode(',', $request->features));
-        }
-
-        // Update slug if name changed
-        if ($request->has('name') && $product->name !== $request->name) {
-            $data['slug'] = Str::slug($request->name);
         }
 
         $product->update($data);
@@ -266,7 +237,10 @@ class ProductAPIController extends Controller
         ], 200);
     }
 
-    public function destroy($id)
+    /**
+     * Delete product (admin)
+     */
+    public function deleteProduct($id)
     {
         $product = Product::findOrFail($id);
         
@@ -280,6 +254,47 @@ class ProductAPIController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product deleted successfully',
+        ], 200);
+    }
+
+    /**
+     * Get all categories (admin)
+     */
+    public function getAllCategories(Request $request)
+    {
+        $query = Category::query();
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+        
+        $perPage = $request->get('per_page', 15);
+        $categories = $query->latest()->paginate($perPage);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $categories,
+        ], 200);
+    }
+
+    /**
+     * Get all orders (admin)
+     */
+    public function getAllOrders(Request $request)
+    {
+        $query = Order::with('items');
+        
+        if ($request->has('status')) {
+            $query->where('order_status', $request->status);
+        }
+        
+        $perPage = $request->get('per_page', 15);
+        $orders = $query->latest()->paginate($perPage);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
         ], 200);
     }
 }

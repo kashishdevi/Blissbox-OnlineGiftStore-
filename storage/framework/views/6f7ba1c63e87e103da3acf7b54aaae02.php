@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Admin Categories - BlissBox'); ?>
 
 <?php $__env->startSection('content'); ?>

@@ -1,11 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminLoginController;
+use App\Http\Controllers\Admin\AdminRegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ContactController;
 use App\Models\Product;
 use App\Models\Category;
 
@@ -146,9 +150,8 @@ Route::post('/cart/update', [CartController::class, 'update'])->name('cart.updat
 Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-Route::get('/contact', function() {
-    return view('pages.contact');
-})->name('contact');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Order routes using OrderController
 Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
@@ -157,8 +160,22 @@ Route::get('/order/thankyou/{id}', [OrderController::class, 'thankyou'])->name('
 Route::get('/order/{id}', [OrderController::class, 'show'])->name('order.show');
 Route::get('/my-orders', [OrderController::class, 'history'])->middleware('auth')->name('orders.history');
 
-// Admin Routes
+// Admin Authentication Routes (Public)
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [AdminLoginController::class, 'login']);
+        Route::get('/register', [AdminRegisterController::class, 'showRegisterForm'])->name('register');
+        Route::post('/register', [AdminRegisterController::class, 'register']);
+    });
+    
+    Route::middleware('auth')->group(function () {
+        Route::post('/logout', [AdminLoginController::class, 'logout'])->name('logout');
+    });
+});
+
+// Admin Routes (Protected)
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     // Admin Dashboard
     Route::get('/dashboard', function () {
         $totalProducts = \App\Models\Product::count();
@@ -166,15 +183,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         $totalOrders = \App\Models\Order::count();
         $pendingOrders = \App\Models\Order::where('order_status', 'pending')->count();
         $totalRevenue = \App\Models\Order::where('payment_status', 'paid')->sum('total') ?? 0;
-        $recentOrders = \App\Models\Order::with('items')->latest()->take(5)->get();
+        
+        // Share variables for sidebar
+        view()->share([
+            'totalProducts' => $totalProducts,
+            'totalCategories' => $totalCategories,
+            'totalOrders' => $totalOrders,
+            'pendingOrders' => $pendingOrders,
+            'totalRevenue' => $totalRevenue,
+        ]);
         
         return view('admin.dashboard', compact(
             'totalProducts',
             'totalCategories',
             'totalOrders',
             'pendingOrders',
-            'totalRevenue',
-            'recentOrders'
+            'totalRevenue'
         ));
     })->name('dashboard');
     
@@ -200,9 +224,30 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/orders/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus'); // Changed from PUT to POST
     Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
+    
+    // Revenue Route
+    Route::get('/revenue', function () {
+        $totalRevenue = \App\Models\Order::where('payment_status', 'paid')->sum('total') ?? 0;
+        $totalOrders = \App\Models\Order::where('payment_status', 'paid')->count();
+        $monthlyRevenue = \App\Models\Order::where('payment_status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('total') ?? 0;
+        $revenueOrders = \App\Models\Order::where('payment_status', 'paid')
+            ->with('items')
+            ->latest()
+            ->paginate(20);
+        
+        return view('admin.revenue', compact('totalRevenue', 'totalOrders', 'monthlyRevenue', 'revenueOrders'));
+    })->name('revenue');
 });
 
-// Default redirect for /admin to dashboard
-Route::redirect('/admin', '/admin/dashboard');
+// Default redirect for /admin
+Route::get('/admin', function () {
+    if (Auth::check() && Auth::user()->is_admin) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('admin.login');
+});
 
 require __DIR__.'/auth.php';

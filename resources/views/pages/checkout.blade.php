@@ -93,6 +93,50 @@
                                     </select>
                                 </div>
                                 
+                                <!-- Credit Card Fields (Hidden by default) -->
+                                <div id="credit_card_fields" style="display: none;">
+                                    <div class="card border-primary mb-3">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0"><i class="fas fa-credit-card me-2"></i>Credit Card Information</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label for="card_number" class="form-label">Card Number *</label>
+                                                <input type="text" class="form-control" id="card_number" name="card_number" 
+                                                       placeholder="1234 5678 9012 3456" maxlength="19" 
+                                                       value="{{ old('card_number') }}">
+                                                <small class="text-muted">Enter 16-digit card number</small>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="card_expiry" class="form-label">Expiry Date *</label>
+                                                    <input type="text" class="form-control" id="card_expiry" name="card_expiry" 
+                                                           placeholder="MM/YY" maxlength="5" value="{{ old('card_expiry') }}">
+                                                    <small class="text-muted">MM/YY format</small>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="card_cvv" class="form-label">CVV *</label>
+                                                    <input type="text" class="form-control" id="card_cvv" name="card_cvv" 
+                                                           placeholder="123" maxlength="4" value="{{ old('card_cvv') }}">
+                                                    <small class="text-muted">3 or 4 digits</small>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="card_name" class="form-label">Cardholder Name *</label>
+                                                <input type="text" class="form-control" id="card_name" name="card_name" 
+                                                       placeholder="John Doe" value="{{ old('card_name') }}">
+                                            </div>
+                                            
+                                            <div class="alert alert-info small mb-0">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Test Mode:</strong> For testing, use card number: 4242 4242 4242 4242, any future expiry date, and any 3-digit CVV.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div class="mb-4">
                                     <label for="notes" class="form-label">Order Notes (Optional)</label>
                                     <textarea class="form-control" id="notes" name="notes" 
@@ -231,4 +275,113 @@
 }
 </style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethod = document.getElementById('payment_method');
+    const creditCardFields = document.getElementById('credit_card_fields');
+    const cardNumber = document.getElementById('card_number');
+    const cardExpiry = document.getElementById('card_expiry');
+    const cardCvv = document.getElementById('card_cvv');
+    const checkoutForm = document.getElementById('checkoutForm');
+    
+    // Show/hide credit card fields based on payment method
+    if (paymentMethod && creditCardFields) {
+        paymentMethod.addEventListener('change', function() {
+            if (this.value === 'credit_card') {
+                creditCardFields.style.display = 'block';
+                if (cardNumber) cardNumber.setAttribute('required', 'required');
+                if (cardExpiry) cardExpiry.setAttribute('required', 'required');
+                if (cardCvv) cardCvv.setAttribute('required', 'required');
+                const cardName = document.getElementById('card_name');
+                if (cardName) cardName.setAttribute('required', 'required');
+            } else {
+                creditCardFields.style.display = 'none';
+                if (cardNumber) cardNumber.removeAttribute('required');
+                if (cardExpiry) cardExpiry.removeAttribute('required');
+                if (cardCvv) cardCvv.removeAttribute('required');
+                const cardName = document.getElementById('card_name');
+                if (cardName) cardName.removeAttribute('required');
+            }
+        });
+    }
+    
+    // Format card number (add spaces every 4 digits)
+    if (cardNumber) {
+        cardNumber.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+    }
+    
+    // Format expiry date (MM/YY)
+    if (cardExpiry) {
+        cardExpiry.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // Only allow numbers for CVV
+    if (cardCvv) {
+        cardCvv.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+    
+    // Form validation before submit
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            if (paymentMethod && paymentMethod.value === 'credit_card') {
+                if (cardNumber) {
+                    const cardNum = cardNumber.value.replace(/\s/g, '');
+                    if (cardNum.length < 13 || cardNum.length > 19) {
+                        e.preventDefault();
+                        alert('Please enter a valid card number (13-19 digits)');
+                        cardNumber.focus();
+                        return false;
+                    }
+                }
+                
+                if (cardExpiry) {
+                    const expiry = cardExpiry.value;
+                    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+                        e.preventDefault();
+                        alert('Please enter a valid expiry date (MM/YY)');
+                        cardExpiry.focus();
+                        return false;
+                    }
+                    
+                    const [month, year] = expiry.split('/');
+                    const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+                    if (expiryDate < new Date()) {
+                        e.preventDefault();
+                        alert('Card has expired. Please use a valid card.');
+                        cardExpiry.focus();
+                        return false;
+                    }
+                }
+                
+                if (cardCvv && (cardCvv.value.length < 3 || cardCvv.value.length > 4)) {
+                    e.preventDefault();
+                    alert('Please enter a valid CVV (3-4 digits)');
+                    cardCvv.focus();
+                    return false;
+                }
+                
+                const cardName = document.getElementById('card_name');
+                if (cardName && !cardName.value.trim()) {
+                    e.preventDefault();
+                    alert('Please enter the cardholder name');
+                    cardName.focus();
+                    return false;
+                }
+            }
+        });
+    }
+});
+</script>
 @endsection

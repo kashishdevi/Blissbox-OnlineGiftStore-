@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use App\Http\ViewComposers\AdminSidebarComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
             \Laravel\Passport\Passport::tokensExpireIn(now()->addDays(15));
             \Laravel\Passport\Passport::refreshTokensExpireIn(now()->addDays(30));
         }
+        
+        // Share admin sidebar variables with all admin views
+        View::composer('admin.layouts.sidebar', AdminSidebarComposer::class);
     }
 }

@@ -17,7 +17,8 @@ class OrderAPIController extends Controller
         $query = Order::with('items', 'items.product');
         
         // Filter by user (non-admin users can only see their own orders)
-        if (!Auth::user()->is_admin) {
+        $user = Auth::user();
+        if (!isset($user->is_admin) || !$user->is_admin) {
             $query->where('user_id', Auth::id());
         } elseif ($request->has('user_id')) {
             $query->where('user_id', $request->user_id);
@@ -47,7 +48,8 @@ class OrderAPIController extends Controller
         $order = Order::with('items', 'items.product', 'user')->findOrFail($id);
         
         // Check authorization
-        if (!Auth::user()->is_admin && $order->user_id !== Auth::id()) {
+        $user = Auth::user();
+        if ((!isset($user->is_admin) || !$user->is_admin) && $order->user_id !== Auth::id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
@@ -165,7 +167,8 @@ class OrderAPIController extends Controller
         $order = Order::findOrFail($id);
         
         // Only admin can update orders
-        if (!Auth::user()->is_admin) {
+        $user = Auth::user();
+        if (!isset($user->is_admin) || !$user->is_admin) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Only admins can update orders.',
@@ -193,6 +196,27 @@ class OrderAPIController extends Controller
             'success' => true,
             'message' => 'Order updated successfully',
             'data' => $order->load('items', 'items.product'),
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $order = Order::findOrFail($id);
+        
+        // Only admin can delete orders
+        $user = Auth::user();
+        if (!isset($user->is_admin) || !$user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only admins can delete orders.',
+            ], 403);
+        }
+        
+        $order->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order deleted successfully',
         ], 200);
     }
 }

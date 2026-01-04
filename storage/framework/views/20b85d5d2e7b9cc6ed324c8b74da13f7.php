@@ -1,6 +1,3 @@
-
-
-
 <?php $__env->startSection('title', 'BlissBox - Online Gifting Store'); ?>
 
 <?php $__env->startSection('content'); ?>

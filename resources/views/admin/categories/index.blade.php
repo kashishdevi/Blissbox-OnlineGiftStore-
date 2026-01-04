@@ -3,21 +3,25 @@
 @section('title', 'Admin Categories - BlissBox')
 
 @section('content')
-<div class="container-fluid py-4">
-    @include('admin.partials.nav')
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 fw-bold">Categories Management</h1>
-            <p class="text-muted mb-0">Manage your product categories</p>
+<div class="admin-layout">
+    @include('admin.layouts.sidebar')
+    
+    <div class="admin-content">
+        <div class="content-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Categories Management</h1>
+                    <p class="text-muted mb-0">Manage your product categories</p>
+                </div>
+                <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Category
+                </a>
+            </div>
         </div>
-        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add New Category
-        </a>
-    </div>
 
-    <!-- Success Message -->
-    @if(session('success'))
+        <div class="content-body">
+            <!-- Success Message -->
+            @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

@@ -12,12 +12,28 @@ class AdminOrderController extends Controller
     /**
      * Display a listing of the orders.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('items')->latest()->paginate(10);
+        $query = Order::with('items');
+        
+        // Filter by status if provided
+        if ($request->has('status') && $request->status) {
+            $query->where('order_status', $request->status);
+        }
+        
+        $orders = $query->latest()->paginate(10);
         $pendingOrders = Order::where('order_status', 'pending')->count();
         $totalOrders = Order::count();
         $totalRevenue = Order::where('payment_status', 'paid')->sum('total') ?? 0;
+        
+        // Share sidebar variables
+        view()->share([
+            'totalProducts' => \App\Models\Product::count(),
+            'totalCategories' => \App\Models\Category::count(),
+            'totalOrders' => $totalOrders,
+            'pendingOrders' => $pendingOrders,
+            'totalRevenue' => $totalRevenue,
+        ]);
         
         return view('admin.orders.index', compact('orders', 'pendingOrders', 'totalOrders', 'totalRevenue'));
     }
@@ -37,31 +53,21 @@ class AdminOrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'order_status' => 'sometimes|required|in:pending,processing,shipped,delivered,cancelled',
-            'payment_status' => 'sometimes|required|in:pending,paid,failed',
-            'notes' => 'nullable|string'
+            'order_status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            'payment_status' => 'required|in:pending,paid,failed',
+            'notes' => 'nullable|string|max:1000'
         ]);
         
         $order = Order::findOrFail($id);
         
-        // Only update fields that are provided
-        $updateData = [];
-        if ($request->has('order_status')) {
-            $updateData['order_status'] = $request->order_status;
-        }
-        if ($request->has('payment_status')) {
-            $updateData['payment_status'] = $request->payment_status;
-        }
-        if ($request->has('notes')) {
-            $updateData['notes'] = $request->notes;
-        }
+        // Update order with validated data
+        $order->update([
+            'order_status' => $validated['order_status'],
+            'payment_status' => $validated['payment_status'],
+            'notes' => $validated['notes'] ?? $order->notes
+        ]);
         
-        if (!empty($updateData)) {
-            $order->update($updateData);
-            return redirect()->back()->with('success', 'Order status updated successfully!');
-        }
-        
-        return redirect()->back()->with('error', 'No changes to update!');
+        return redirect()->back()->with('success', 'Order status updated successfully!');
     }
 
     /**

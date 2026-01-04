@@ -3,24 +3,29 @@
 @section('title', 'Orders Management - BlissBox Admin')
 
 @section('content')
-<div class="container-fluid py-4">
-    @include('admin.partials.nav')
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 fw-bold">Orders Management</h1>
-            <p class="text-muted mb-0">Manage customer orders</p>
+<div class="admin-layout">
+    @include('admin.layouts.sidebar')
+    
+    <div class="admin-content">
+        <div class="content-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Orders Management</h1>
+                    <p class="text-muted mb-0">Manage customer orders</p>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-    
-    <!-- Stats Cards -->
-    <div class="row mb-4">
+
+        <div class="content-body">
+            @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            @endif
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
         <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
@@ -122,7 +127,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" 
-                                            data-bs-target="#statusModal{{ $order->id }}">
+                                            data-bs-target="#statusModal{{ $order->id }}" title="Edit Order Status">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <form action="{{ route('admin.orders.destroy', $order->id) }}" method="POST" 
@@ -138,19 +143,29 @@
                         </tr>
                         
                         <!-- Status Update Modal -->
-                        <div class="modal fade" id="statusModal{{ $order->id }}" tabindex="-1">
-                            <div class="modal-dialog">
+                        <div class="modal fade" id="statusModal{{ $order->id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ $order->id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
-                                    <form action="{{ route('admin.orders.updateStatus', $order->id) }}" method="POST">
+                                    <form action="{{ route('admin.orders.updateStatus', $order->id) }}" method="POST" id="statusForm{{ $order->id }}">
                                         @csrf
                                         <div class="modal-header">
-                                            <h5 class="modal-title">Update Order Status</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            <h5 class="modal-title" id="statusModalLabel{{ $order->id }}">Update Order Status - #{{ $order->order_number }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
+                                            @if($errors->any())
+                                                <div class="alert alert-danger">
+                                                    <ul class="mb-0">
+                                                        @foreach($errors->all() as $error)
+                                                            <li>{{ $error }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
+                                            
                                             <div class="mb-3">
-                                                <label class="form-label">Order Status</label>
-                                                <select name="order_status" class="form-select">
+                                                <label for="order_status{{ $order->id }}" class="form-label">Order Status *</label>
+                                                <select name="order_status" id="order_status{{ $order->id }}" class="form-select" required>
                                                     <option value="pending" {{ $order->order_status == 'pending' ? 'selected' : '' }}>Pending</option>
                                                     <option value="processing" {{ $order->order_status == 'processing' ? 'selected' : '' }}>Processing</option>
                                                     <option value="shipped" {{ $order->order_status == 'shipped' ? 'selected' : '' }}>Shipped</option>
@@ -159,17 +174,23 @@
                                                 </select>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label">Payment Status</label>
-                                                <select name="payment_status" class="form-select">
+                                                <label for="payment_status{{ $order->id }}" class="form-label">Payment Status *</label>
+                                                <select name="payment_status" id="payment_status{{ $order->id }}" class="form-select" required>
                                                     <option value="pending" {{ $order->payment_status == 'pending' ? 'selected' : '' }}>Pending</option>
                                                     <option value="paid" {{ $order->payment_status == 'paid' ? 'selected' : '' }}>Paid</option>
                                                     <option value="failed" {{ $order->payment_status == 'failed' ? 'selected' : '' }}>Failed</option>
                                                 </select>
                                             </div>
+                                            <div class="mb-3">
+                                                <label for="notes{{ $order->id }}" class="form-label">Notes (Optional)</label>
+                                                <textarea name="notes" id="notes{{ $order->id }}" class="form-control" rows="3" placeholder="Add any notes about this order...">{{ old('notes', $order->notes ?? '') }}</textarea>
+                                            </div>
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-primary">Update Status</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save me-1"></i>Update Status
+                                            </button>
                                         </div>
                                     </form>
                                 </div>

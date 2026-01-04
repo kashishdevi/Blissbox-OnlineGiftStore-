@@ -43,14 +43,24 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string',
-            'payment_method' => 'required|string',
+            'payment_method' => 'required|string|in:cash_on_delivery,credit_card,paypal',
             'notes' => 'nullable|string'
-        ]);
+        ];
+        
+        // Add credit card validation if payment method is credit_card
+        if ($request->payment_method === 'credit_card') {
+            $rules['card_number'] = 'required|string|regex:/^[\d\s]{13,19}$/';
+            $rules['card_expiry'] = 'required|string|regex:/^\d{2}\/\d{2}$/';
+            $rules['card_cvv'] = 'required|string|regex:/^\d{3,4}$/';
+            $rules['card_name'] = 'required|string|max:255';
+        }
+        
+        $request->validate($rules);
         
         $cart = session()->get('cart', []);
         
@@ -87,7 +97,7 @@ class OrderController extends Controller
             'tax' => $tax,
             'total' => $total,
             'payment_method' => $request->payment_method,
-            'payment_status' => 'pending',
+            'payment_status' => ($request->payment_method === 'credit_card') ? 'paid' : 'pending',
             'order_status' => 'pending',
             'notes' => $request->notes
         ]);
@@ -134,8 +144,17 @@ class OrderController extends Controller
         $order = Order::with('items.product')->findOrFail($id);
         
         // Check if user is authorized to view this order
-        if (Auth::check() && Auth::id() != $order->user_id && !Auth::user()->is_admin) {
-            abort(403, 'Unauthorized');
+        // Allow if:
+        // 1. User is not logged in (guest checkout - allow viewing)
+        // 2. User owns the order
+        // 3. User is an admin
+        if (Auth::check()) {
+            $user = Auth::user();
+            $isAdmin = method_exists($user, 'is_admin') ? $user->is_admin : false;
+            
+            if ($order->user_id && Auth::id() != $order->user_id && !$isAdmin) {
+                abort(403, 'Unauthorized. You can only view your own orders.');
+            }
         }
         
         return view('pages.order-show', compact('order'));

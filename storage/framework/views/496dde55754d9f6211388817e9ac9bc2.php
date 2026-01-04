@@ -38,6 +38,24 @@
                         <i class="fas fa-external-link-alt me-1"></i>View Store
                     </a>
                 </li>
+                <?php if(auth()->guard()->check()): ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-1"></i><?php echo e(Auth::user()->name ?? 'Admin'); ?>
+
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form action="<?php echo e(route('admin.logout')); ?>" method="POST" class="d-inline">
+                                <?php echo csrf_field(); ?>
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>

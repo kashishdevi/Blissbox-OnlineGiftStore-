@@ -6,6 +6,7 @@ use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\CategoryAPIController;
 use App\Http\Controllers\API\OrderAPIController;
 use App\Http\Controllers\API\AuthAPIController;
+use App\Http\Controllers\API\AdminAPIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,39 +30,46 @@ Route::prefix('v1')->group(function () {
     Route::get('/categories', [CategoryAPIController::class, 'index']);
     Route::get('/categories/{id}', [CategoryAPIController::class, 'show']);
     
-    // Authentication
+    // Authentication - Public
     Route::post('/register', [AuthAPIController::class, 'register']);
     Route::post('/login', [AuthAPIController::class, 'login']);
+    Route::post('/admin/register', [AuthAPIController::class, 'adminRegister']);
+    Route::post('/admin/login', [AuthAPIController::class, 'adminLogin']);
 });
 
-// Protected API Routes (Require Passport Authentication)
-Route::middleware('auth:api')->prefix('v1')->group(function () {
+// Protected API Routes (Require Authentication)
+Route::middleware('api.auth')->prefix('v1')->group(function () {
     // User info
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', [AuthAPIController::class, 'user']);
     
-    // Products CRUD (Admin only)
-    Route::middleware('admin')->group(function () {
-        Route::post('/products', [ProductAPIController::class, 'store']);
-        Route::put('/products/{id}', [ProductAPIController::class, 'update']);
-        Route::delete('/products/{id}', [ProductAPIController::class, 'destroy']);
-    });
+    // Logout
+    Route::post('/logout', [AuthAPIController::class, 'logout']);
     
-    // Categories CRUD (Admin only)
-    Route::middleware('admin')->group(function () {
-        Route::post('/categories', [CategoryAPIController::class, 'store']);
-        Route::put('/categories/{id}', [CategoryAPIController::class, 'update']);
-        Route::delete('/categories/{id}', [CategoryAPIController::class, 'destroy']);
-    });
-    
-    // Orders CRUD
+    // Orders CRUD (Authenticated users)
     Route::get('/orders', [OrderAPIController::class, 'index']);
     Route::get('/orders/{id}', [OrderAPIController::class, 'show']);
     Route::post('/orders', [OrderAPIController::class, 'store']);
     Route::put('/orders/{id}', [OrderAPIController::class, 'update']);
-    
-    // Logout
-    Route::post('/logout', [AuthAPIController::class, 'logout']);
 });
 
+// Admin Protected Routes (Require Admin Authentication)
+Route::middleware(['api.auth', 'admin'])->prefix('v1/admin')->group(function () {
+    // Admin Products CRUD
+    Route::get('/products', [AdminAPIController::class, 'getAllProducts']);
+    Route::get('/products/{id}', [AdminAPIController::class, 'getProduct']);
+    Route::post('/products', [AdminAPIController::class, 'createProduct']);
+    Route::put('/products/{id}', [AdminAPIController::class, 'updateProduct']);
+    Route::delete('/products/{id}', [AdminAPIController::class, 'deleteProduct']);
+    
+    // Admin Categories CRUD
+    Route::get('/categories', [AdminAPIController::class, 'getAllCategories']);
+    Route::post('/categories', [CategoryAPIController::class, 'store']);
+    Route::put('/categories/{id}', [CategoryAPIController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryAPIController::class, 'destroy']);
+    
+    // Admin Orders
+    Route::get('/orders', [AdminAPIController::class, 'getAllOrders']);
+    Route::get('/orders/{id}', [OrderAPIController::class, 'show']);
+    Route::put('/orders/{id}', [OrderAPIController::class, 'update']);
+    Route::delete('/orders/{id}', [OrderAPIController::class, 'destroy']);
+});

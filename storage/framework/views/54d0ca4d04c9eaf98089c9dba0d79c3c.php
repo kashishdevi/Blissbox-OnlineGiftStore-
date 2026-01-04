@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Products - BlissBox'); ?>
 
 <?php $__env->startSection('content'); ?>
